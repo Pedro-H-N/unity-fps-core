@@ -6,6 +6,9 @@ This repository contains core FPS gameplay systems developed in Unity using C#.
 - Fire rate control
 - Ammo and reload logic
 - Enemy damage via raycasting
+- PowerUps
+- Weapon Manager
+- Wave Spawning
 
 ## Tools
 - Unity Engine
