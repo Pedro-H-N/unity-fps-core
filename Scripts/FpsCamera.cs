@@ -1,44 +1,48 @@
 using UnityEngine;
 
-public class FpsCamera : MonoBehaviour
+public class CameraLook : MonoBehaviour
 {
-    public float sensitivity = 300f;
-    public Transform playerBody;
+    [Header("Settings")]
+    [SerializeField] private float sensitivity = 300f;
+    [SerializeField] private float maxVerticalAngle = 80f;
 
-    public GameObject cameraHolder;
-    public PlayerMovement player;
+    [Header("References")]
+    [SerializeField] private Transform playerBody;
+    [SerializeField] private PlayerMovement player;
 
-    float xRotation = 0f;
+    private float xRotation;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    private void Start()
     {
-        player = GameObject.FindWithTag("Player").GetComponent<PlayerMovement>();
-        Cursor.lockState = CursorLockMode.Locked;
+        LockCursor(true);
     }
 
-    // Update is called once per frame
-    void Update()
+    private void Update()
     {
-
-        if (player.isDead)
-        {   
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+        if (player != null && player.IsDead)
+        {
+            LockCursor(false);
             return;
         }
 
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        RotateCamera();
+    }
 
+    private void RotateCamera()
+    {
         float mouseX = Input.GetAxis("Mouse X") * sensitivity * Time.deltaTime;
         float mouseY = Input.GetAxis("Mouse Y") * sensitivity * Time.deltaTime;
 
-        playerBody.Rotate(Vector3.up * mouseX);
-
         xRotation -= mouseY;
-        xRotation = Mathf.Clamp(xRotation, -80f, 80f);
+        xRotation = Mathf.Clamp(xRotation, -maxVerticalAngle, maxVerticalAngle);
+
         transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+        playerBody.Rotate(Vector3.up * mouseX);
     }
-    
+
+    private void LockCursor(bool locked)
+    {
+        Cursor.lockState = locked ? CursorLockMode.Locked : CursorLockMode.None;
+        Cursor.visible = !locked;
+    }
 }
