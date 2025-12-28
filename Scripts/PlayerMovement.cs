@@ -1,73 +1,67 @@
-
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 using TMPro;
+using UnityEngine.UI;
 
-
+[RequireComponent(typeof(CharacterController))]
 public class PlayerMovement : MonoBehaviour
 {
-     public float speed = 6f;
-    public float jumpHeight = 1.2f;
-    public float gravity = -9.81f;
-    public float dashSpeed = 20f;
-    public float dashDuration = 0.2f;
+    [Header("Movement")]
+    [SerializeField] private float speed = 6f;
+    [SerializeField] private float jumpHeight = 1.2f;
+    [SerializeField] private float gravity = -9.81f;
+
+    [Header("Dash")]
+    [SerializeField] private float dashSpeed = 20f;
+    [SerializeField] private float dashDuration = 0.2f;
+    [SerializeField] private float dashCooldown = 1f;
+
+    [Header("Bounds")]
+    [SerializeField] private Vector2 movementLimits = new Vector2(24f, 24f);
+
+    [Header("UI")]
+    [SerializeField] private TextMeshProUGUI gameOverText;
+    [SerializeField] private Button restartButton;
+
+    public bool IsDead { get; private set; }
 
     private CharacterController controller;
-    private Vector3 velocity;  
+    private Vector3 velocity;
     private bool isGrounded;
     private bool isDashing;
-    private float dashTime;
+    private float dashTimer;
+    private float dashCooldownTimer;
     private Vector3 dashDirection;
 
-    public float dashCooldown = 1f;
-
-    private float dashCooldownTimer;
-    private bool canDash = true;
-    public bool isDead;
-
-    public TextMeshProUGUI gameOverText;
-    public Button restartButton;
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    private void Awake()
     {
-        restartButton.gameObject.SetActive(false);
-        gameOverText.gameObject.SetActive(false);
         controller = GetComponent<CharacterController>();
     }
 
-    // Update is called once per frame
-    void Update()
+    private void Start()
     {
-        if (isDead)
-            return;
-        if (isDashing)
-        {
-            controller.Move(dashDirection * dashSpeed * Time.deltaTime);
-            dashTime -= Time.deltaTime;
+        gameOverText.gameObject.SetActive(false);
+        restartButton.gameObject.SetActive(false);
+    }
 
-            if (dashTime <= 0f)
-            
-                isDashing = false;
+    private void Update()
+    {
+        if (IsDead) return;
 
-                return; // impede movimento normal durante o dash
-            
-            
-        }
+        HandleGroundCheck();
+        HandleDash();
+        HandleMovement();
+        ApplyGravity();
+        ClampPosition();
+    }
 
-       isGrounded = controller.isGrounded;
-
-       if(isGrounded && velocity.y < 0)
-       
-       velocity.y = -2f;
+    private void HandleMovement()
+    {
+        if (isDashing) return;
 
         float x = Input.GetAxis("Horizontal");
         float z = Input.GetAxis("Vertical");
 
         Vector3 move = transform.right * x + transform.forward * z;
-
         controller.Move(move * speed * Time.deltaTime);
 
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
@@ -75,48 +69,62 @@ public class PlayerMovement : MonoBehaviour
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
         }
 
-         velocity.y += gravity * Time.deltaTime;
-        controller.Move(velocity * Time.deltaTime);
+        if (Input.GetKeyDown(KeyCode.LeftShift) && dashCooldownTimer <= 0f && move.magnitude > 0.1f)
+        {
+            StartDash(move);
+        }
+    }
 
-        Vector3 pos = transform.position;
-
-    
-        pos.x = Mathf.Clamp(pos.x, -24f, 24f);
-        pos.z = Mathf.Clamp(pos.z, -24f, 24f);
-
-        transform.position = pos;
-
-        if (!canDash)
+    private void HandleDash()
+    {
+        if (!isDashing)
         {
             dashCooldownTimer -= Time.deltaTime;
-        
-            if (dashCooldownTimer <= 0f)
-            {
-                canDash = true;
-            }
+            return;
         }
 
+        controller.Move(dashDirection * dashSpeed * Time.deltaTime);
+        dashTimer -= Time.deltaTime;
 
-        if (Input.GetKeyDown(KeyCode.LeftShift) && !isDashing && canDash)
+        if (dashTimer <= 0f)
         {
-            Dash(move);
+            isDashing = false;
         }
     }
 
-    void Dash(Vector3 moveDirection)
+    private void StartDash(Vector3 direction)
     {
-        if (moveDirection.magnitude <= 0.1f) return;
-        {
-            isDashing = true;
-            dashTime = dashDuration;
-            dashDirection = moveDirection.normalized;
-        }
-
-        canDash = false;
+        isDashing = true;
+        dashTimer = dashDuration;
         dashCooldownTimer = dashCooldown;
+        dashDirection = direction.normalized;
     }
 
-    void OnControllerColliderHit(ControllerColliderHit hit)
+    private void HandleGroundCheck()
+    {
+        isGrounded = controller.isGrounded;
+
+        if (isGrounded && velocity.y < 0f)
+        {
+            velocity.y = -2f;
+        }
+    }
+
+    private void ApplyGravity()
+    {
+        velocity.y += gravity * Time.deltaTime;
+        controller.Move(velocity * Time.deltaTime);
+    }
+
+    private void ClampPosition()
+    {
+        Vector3 pos = transform.position;
+        pos.x = Mathf.Clamp(pos.x, -movementLimits.x, movementLimits.x);
+        pos.z = Mathf.Clamp(pos.z, -movementLimits.y, movementLimits.y);
+        transform.position = pos;
+    }
+
+    private void OnControllerColliderHit(ControllerColliderHit hit)
     {
         if (hit.gameObject.CompareTag("Enemy"))
         {
@@ -124,13 +132,13 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    public void Die()
+    private void Die()
     {
-        isDead = true;
-        restartButton.gameObject.SetActive(true);
-        gameOverText.gameObject.SetActive(true);
-        isDashing = false;
+        IsDead = true;
         velocity = Vector3.zero;
+        isDashing = false;
+
+        gameOverText.gameObject.SetActive(true);
+        restartButton.gameObject.SetActive(true);
     }
-    
 }
