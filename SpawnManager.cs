@@ -3,17 +3,18 @@ using UnityEngine;
 
 public class SpawnManager : MonoBehaviour
 {
-    public float spawnDelay = 1.0f;
     public GameObject[] enemyPrefabs;
     public GameObject[] powerUps;
     public GameObject ShotgunPrefab;
-
+    
+    public float spawnDelay = 1.0f
     public float spawnLimit = 24.0f;
     public int enemiesAlive;
-    public bool isGameActive;
-    public bool isSpawningWave;
     public int waveNumber = 1;
     public int shotgunWave = 3;
+
+    public bool isGameActive;
+    public bool isSpawningWave;
 
 
 
@@ -91,3 +92,4 @@ public class SpawnManager : MonoBehaviour
         }
     }   
 }
+
