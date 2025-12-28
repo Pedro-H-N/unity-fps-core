@@ -4,24 +4,25 @@ using UnityEngine;
 
 public class Enemy : MonoBehaviour
 {
-    
+    [Header("Variables")]
     public float hp = 3f;
     public float speed = 5f;
     public float retreatRange = 4f;
     public float attackRange = 10f;
-
-    public GameObject projectilePrefab;
-    public Transform shootPoint;
+    private float nextFireTime;
     public float fireRate = 1.5f;
 
-    private float nextFireTime;
+    [Header("Objects")]
+    public GameObject projectilePrefab;
+    public Transform shootPoint;
 
+    [Header("Mentions")]
+    
     private GameObject player;
     private SpawnManager spawnManager;
-
     private Renderer enemyRenderer;
     private Color originalColor;
-
+    
     void Start()
     {
         player = GameObject.FindWithTag("Player");
@@ -108,4 +109,5 @@ public class Enemy : MonoBehaviour
         enemyRenderer.material.color = originalColor;
     }
 }
+
 
